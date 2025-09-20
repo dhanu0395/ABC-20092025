@@ -1,0 +1,63 @@
+trigger: none
+
+pool:
+  name: LinuxPool
+
+stages:
+  - stage: build stage
+    jobs:
+      - job: buildJob
+        steps:
+          - task: Maven@4
+            displayName: "Build WAR using Maven"
+            inputs:
+              mavenPomFile: 'archtype/mywebapp/pom.xml'
+              goals: 'package'
+              options: '-DskipTests'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              javaHomeOption: 'JDKVersion'
+              mavenVersionOption: 'Default'
+              mavenAuthenticateFeed: false
+              effectivePomSkip: false
+              sonarQubeRunAnalysis: false
+
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish WAR"
+            inputs:
+              PathtoPublish: 'archtype/mywebapp/target/mywebapp.war'
+              ArtifactName: 'drop'
+              publishLocation: 'container'
+
+          - task: Docker@2
+            inputs:
+              containerRegistry: 'docker0395'
+              repository: 'dhanu0395/archtype'
+              command: 'buildAndPush'
+              Dockerfile: 'archtype/mywebapp/Dockerfile'
+              buildContext: 'archtype/mywebapp'
+
+  - stage: Deploy
+    displayName: "Deploy to container registry"
+    dependsOn: DockerBuildPush
+    jobs:
+      - deployment: DeployWebApp
+        environment: 'dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebAppContainer@1
+                  displayName: "Deploy to Azure Web App"
+                  inputs:
+                    azureSubscription: 'my-azure-service-connection'
+                    appName: 'mywebapp'
+                    imageName: 'questioncontainer2009/mywebapp:1.0.0'
+
+  
+
+
+
+              
+         
+          
