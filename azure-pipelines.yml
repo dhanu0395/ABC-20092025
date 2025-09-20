@@ -4,7 +4,7 @@ pool:
   name: LinuxPool
 
 stages:
-  - stage: build stage
+  - stage: buildstage
     jobs:
       - job: buildJob
         steps:
@@ -39,7 +39,7 @@ stages:
 
   - stage: Deploy
     displayName: "Deploy to container registry"
-    dependsOn: DockerBuildPush
+    dependsOn: buildstage
     jobs:
       - deployment: DeployWebApp
         environment: 'dev'
@@ -50,7 +50,7 @@ stages:
                 - task: AzureWebAppContainer@1
                   displayName: "Deploy to Azure Web App"
                   inputs:
-                    azureSubscription: 'my-azure-service-connection'
+                    azureSubscription: 'DjAzureSPNConnection'
                     appName: 'mywebapp'
                     imageName: 'questioncontainer2009/mywebapp:1.0.0'
 
